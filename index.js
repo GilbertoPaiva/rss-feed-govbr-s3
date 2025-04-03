@@ -1,8 +1,8 @@
-const express = require('express');
-const axios = require('axios');
-const Parser = require('rss-parser');
-const AWS = require('aws-sdk');
-const fs = require('fs');
+import express from 'express';
+import axios from 'axios';
+import Parser from'rss-parser';
+import AWS from 'aws-sdk';
+import fs from 'fs';
 
 const app = express();
 const port = 3000;
