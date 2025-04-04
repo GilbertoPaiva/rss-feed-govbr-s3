@@ -11,7 +11,6 @@ const parser = new Parser();
 const s3 = new AWS.S3({ region: 'us-east-1' });
 const bucketName = 'seu-bucket-s3';
 
-// Extrair RSS e salvar no S3
 app.get('/extract', async (req, res) => {
   try {
     const feed = await parser.parseURL('https://www.gov.br/pt-br/rss');
@@ -33,7 +32,6 @@ app.get('/extract', async (req, res) => {
   }
 });
 
-// Servir página HTML
 app.use(express.static('public'));
 
 app.listen(port, () => {
