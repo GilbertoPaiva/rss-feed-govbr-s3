@@ -1,13 +1,11 @@
 import express from 'express';
-import cors from 'cors';
-import router from './routes/rssRoutes.js';
+import rssRoute from './src/routes/rssRoutes.js';
 
 const app = express();
 const port = 3000;
 
-app.use(cors());
 app.use(express.json());
-app.use('/api', router); 
+app.use('/api', rssRoute);
 app.use(express.static('public'));
 
 app.listen(port, () => {
