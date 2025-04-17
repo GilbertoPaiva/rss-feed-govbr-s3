@@ -1,4 +1,3 @@
-// index.js
 import 'dotenv/config';
 import express from 'express';
 import rssRoute from './src/routes/rssRoutes.js';
