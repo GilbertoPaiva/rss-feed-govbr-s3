@@ -3,22 +3,19 @@ const parser = new Parser();
 
 class RSSService {
   static async fetchRSSFeed() {
-    const url = 'https://www.gov.br/pt-br/noticias/RSS'; 
-
+    const url = process.env.RSS_URL;
     const feed = await parser.parseURL(url);
 
-    const newData = {
+    return {
       title: feed.title,
-      items: feed.items.map((item) => ({
+      items: feed.items.map(item => ({
         title: item.title,
         link: item.link,
         description: item.content || "Descrição indisponível.",
         pubDate: item.pubDate,
-        image: item.enclosure ? item.enclosure.url : "Sem imagem",
-      })),
+        image: item.enclosure?.url || "Sem imagem"
+      }))
     };
-
-    return newData;
   }
 }
 
