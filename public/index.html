@@ -1,20 +1,144 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta RSS</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consulta RSS</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      font-size: 16px;
+      margin: 20px auto;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    #output {
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 20px;
+      white-space: pre-wrap;
+      margin-top: 20px;
+    }
+    
+    .rss-item {
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .rss-item h3 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+    
+    .rss-item a {
+      color: #3498db;
+      text-decoration: none;
+    }
+    
+    .rss-item a:hover {
+      text-decoration: underline;
+    }
+    
+    .rss-item p {
+      margin-bottom: 5px;
+      color: #7f8c8d;
+    }
+  </style>
 </head>
 <body>
-    <h1>Consultar RSS</h1>
+  <h1>Consultar RSS</h1>
   <button onclick="fetchData()">Carregar RSS</button>
-  <pre id="output"></pre>
-
+  <div id="output"></div>
+ 
   <script>
     async function fetchData() {
-      const response = await fetch('/extract');
-      const data = await response.text();
-      document.getElementById('output').textContent = data;
+      try {
+        const mockData = {
+          "message": "RSS extraído e salvo no S3 com sucesso",
+          "data": [
+            {
+              "title": "Services para o cidadão",
+              "link": "https://www.gov.br/pt-br/noticias/servicos-para-o-cidadao",
+              "description": "Descrição indisponível.",
+              "image": "Sem imagem"
+            },
+            {
+              "title": "COP30",
+              "link": "https://www.gov.br/pt-br/noticias/cop30",
+              "description": "Descrição indisponível.",
+              "image": "Sem imagem"
+            },
+            {
+              "title": "Conta de luz terá bandeira verde em setembro",
+              "link": "https://www.gov.br/pt-br/noticias/conta-de-luz-tera-bandeira-verde-em-setembro",
+              "description": "A Aneel anunciou que não haverá acréscimo na conta para além do que é consumido",
+              "image": "Sem imagem"
+            }
+          ]
+        };
+
+        displayData(mockData);
+
+        const res = await fetch('api/buscar-rss', { cache: 'no-cache' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const result = await res.json();
+        displayData(result);
+
+      } catch (err) {
+        document.getElementById('output').textContent = err.message;
+      }
+    }
+    
+    function displayData(data) {
+      const output = document.getElementById('output');
+      
+      // Criar elemento para a mensagem
+      const message = document.createElement('div');
+      message.innerHTML = `<p><strong>${data.message}</strong></p>`;
+      output.appendChild(message);
+      
+      // Criar elementos para cada item RSS
+      data.data.forEach(item => {
+        const itemElement = document.createElement('div');
+        itemElement.className = 'rss-item';
+        itemElement.innerHTML = `
+          <h3>${item.title}</h3>
+          <p><a href="${item.link}" target="_blank">${item.link}</a></p>
+          <p>${item.description}</p>
+          <p>Imagem: ${item.image}</p>
+        `;
+        output.appendChild(itemElement);
+      });
     }
   </script>
 </body>
