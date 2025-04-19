@@ -2,144 +2,124 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Consulta RSS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consultar RSS</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       max-width: 800px;
       margin: 0 auto;
       padding: 20px;
-      background-color: #f5f5f5;
+      background-color: #f8f9fa;
     }
-    
     h1 {
-      color: #333;
+      color: #2c3e50;
       text-align: center;
       margin-bottom: 30px;
     }
-    
-    button {
-      background-color: #4CAF50;
+    #buscar-btn {
+      background-color: #3498db;
       color: white;
       border: none;
-      padding: 10px 20px;
-      text-align: center;
-      text-decoration: none;
-      display: block;
+      padding: 12px 24px;
       font-size: 16px;
-      margin: 20px auto;
+      border-radius: 6px;
       cursor: pointer;
-      border-radius: 5px;
+      display: block;
+      margin: 0 auto 30px;
       transition: background-color 0.3s;
     }
-    
-    button:hover {
-      background-color: #45a049;
+    #buscar-btn:hover {
+      background-color: #2980b9;
     }
-    
     #output {
-      background-color: white;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+      background: white;
+      border-radius: 8px;
       padding: 20px;
-      white-space: pre-wrap;
-      margin-top: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-    
     .rss-item {
-      background-color: white;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      padding: 15px;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
     }
-    
+    .rss-item:last-child {
+      border-bottom: none;
+    }
     .rss-item h3 {
-      margin-top: 0;
       color: #2c3e50;
+      margin-top: 0;
     }
-    
     .rss-item a {
       color: #3498db;
       text-decoration: none;
+      font-weight: bold;
     }
-    
-    .rss-item a:hover {
-      text-decoration: underline;
-    }
-    
     .rss-item p {
-      margin-bottom: 5px;
       color: #7f8c8d;
+    }
+    .loading {
+      text-align: center;
+      color: #7f8c8d;
+      font-style: italic;
+    }
+    .error {
+      color: #e74c3c;
+      background-color: #fadbd8;
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
   <h1>Consultar RSS</h1>
-  <button onclick="fetchData()">Carregar RSS</button>
+  
+  <!-- Botão corrigido com ID consistente -->
+  <button id="buscar-btn">Carregar RSS</button>
+  
   <div id="output"></div>
- 
+
   <script>
-    async function fetchData() {
-      try {
-        const mockData = {
-          "message": "RSS extraído e salvo no S3 com sucesso",
-          "data": [
-            {
-              "title": "Services para o cidadão",
-              "link": "https://www.gov.br/pt-br/noticias/servicos-para-o-cidadao",
-              "description": "Descrição indisponível.",
-              "image": "Sem imagem"
-            },
-            {
-              "title": "COP30",
-              "link": "https://www.gov.br/pt-br/noticias/cop30",
-              "description": "Descrição indisponível.",
-              "image": "Sem imagem"
-            },
-            {
-              "title": "Conta de luz terá bandeira verde em setembro",
-              "link": "https://www.gov.br/pt-br/noticias/conta-de-luz-tera-bandeira-verde-em-setembro",
-              "description": "A Aneel anunciou que não haverá acréscimo na conta para além do que é consumido",
-              "image": "Sem imagem"
-            }
-          ]
-        };
-
-        displayData(mockData);
-
-        const res = await fetch('api/buscar-rss', { cache: 'no-cache' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const result = await res.json();
-        displayData(result);
-
-      } catch (err) {
-        document.getElementById('output').textContent = err.message;
-      }
-    }
-    
-    function displayData(data) {
+    document.addEventListener('DOMContentLoaded', () => {
+      const buscarBtn = document.getElementById('buscar-btn');
       const output = document.getElementById('output');
-      
-      // Criar elemento para a mensagem
-      const message = document.createElement('div');
-      message.innerHTML = `<p><strong>${data.message}</strong></p>`;
-      output.appendChild(message);
-      
-      // Criar elementos para cada item RSS
-      data.data.forEach(item => {
-        const itemElement = document.createElement('div');
-        itemElement.className = 'rss-item';
-        itemElement.innerHTML = `
-          <h3>${item.title}</h3>
-          <p><a href="${item.link}" target="_blank">${item.link}</a></p>
-          <p>${item.description}</p>
-          <p>Imagem: ${item.image}</p>
-        `;
-        output.appendChild(itemElement);
+
+      buscarBtn.addEventListener('click', async () => {
+        try {
+          output.innerHTML = '<p class="loading">Carregando notícias...</p>';
+          
+          const response = await fetch('/api/buscar-rss');
+          
+          if (!response.ok) {
+            throw new Error(`Erro: ${response.status}`);
+          }
+
+          const data = await response.json();
+          
+          if (data.items && data.items.length > 0) {
+            output.innerHTML = '';
+            data.items.forEach(item => {
+              const itemHTML = `
+                <div class="rss-item">
+                  <h3>${item.title}</h3>
+                  <a href="${item.link}" target="_blank">Acessar notícia</a>
+                  <p>${item.description}</p>
+                  ${item.image !== 'Sem imagem' ? 
+                    `<img src="${item.image}" alt="${item.title}" style="max-width:100%; border-radius:4px; margin-top:10px;">` : ''}
+                </div>
+              `;
+              output.insertAdjacentHTML('beforeend', itemHTML);
+            });
+          } else {
+            output.innerHTML = '<p class="error">Nenhuma notícia encontrada</p>';
+          }
+        } catch (error) {
+          output.innerHTML = `<p class="error">Falha ao carregar: ${error.message}</p>`;
+          console.error('Erro:', error);
+        }
       });
-    }
+    });
   </script>
 </body>
 </html>
