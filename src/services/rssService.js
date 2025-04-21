@@ -1,38 +1,50 @@
-import Parser from 'rss-parser';
+const axios = require('axios');
+const Parser = require('rss-parser');
+const s3Service = require('./s3Service');
+const dotenv = require('dotenv');
 
-const parser = new Parser({
-  timeout: 5000, // 5 segundos de timeout
-  maxRedirects: 3
-});
+dotenv.config();
 
-class RSSService {
-  static async fetchRSSFeed() {
+const parser = new Parser();
+const RSS_URL = process.env.RSS_URL_GOVBR;
+const CACHE_FILE_KEY = process.env.CACHE_FILE_KEY || 'rss-gov/rss-data.json';
+
+async function fetchRSSFeed() {
+  try {
+    const response = await axios.get(RSS_URL);
+    const feed = await parser.parseString(response.data);
+    
+    const processedFeed = {
+      title: feed.title,
+      description: feed.description,
+      link: feed.link,
+      lastUpdated: new Date().toISOString(),
+      items: feed.items.map(item => ({
+        title: item.title,
+        link: item.link,
+        pubDate: item.pubDate,
+        content: item.content,
+        contentSnippet: item.contentSnippet,
+        categories: item.categories || [],
+        creator: item.creator || 'Governo Brasileiro'
+      }))
+    };
+    
+    await s3Service.saveToS3(CACHE_FILE_KEY, processedFeed);
+    return processedFeed;
+  } catch (error) {
+    console.error('Erro ao buscar feed RSS:', error);
+    
     try {
-      const url = process.env.RSS_URL;
-      if (!url) throw new Error('URL do RSS não configurada no .env');
-
-      const feed = await parser.parseURL(url);
-
-      if (!feed?.items?.length) {
-        throw new Error('O feed RSS está vazio ou mal formatado');
-      }
-
-      return {
-        title: feed.title || 'Feed sem título',
-        items: feed.items.map(item => ({
-          title: item.title || 'Sem título',
-          link: item.link || '#',
-          description: item.content || item.description || "Descrição indisponível.",
-          pubDate: item.pubDate || '',
-          image: item.enclosure?.url || item.image || "Sem imagem"
-        }))
-      };
-
-    } catch (error) {
-      console.error('[RSS Service] Erro:', error);
-      throw new Error(`Falha ao buscar RSS: ${error.message}`);
+      const cachedFeed = await s3Service.getFileFromS3(CACHE_FILE_KEY);
+      console.log('Usando feed RSS em cache do S3');
+      return cachedFeed;
+    } catch (cacheError) {
+      throw new Error('Não foi possível obter o feed RSS nem do cache');
     }
   }
 }
 
-export default RSSService;
+module.exports = {
+  fetchRSSFeed
+};

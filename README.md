@@ -1,84 +1,82 @@
-# RSS Feed API - Avaliação das Sprints 2 e 3
+# Feed RSS do Governo Brasileiro com Armazenamento S3
 
-Programa de Bolsas Compass UOL / AWS - Turma março/2025
-
-## Descrição do Projeto
-
-API desenvolvida em JavaScript/NodeJS implementada em Docker na AWS para extrair informações de feeds RSS do portal Gov.br. A aplicação salva os dados extraídos em formato JSON em um bucket S3 e permite a consulta do conteúdo através de uma página HTML.
+Este projeto exibe o feed RSS do governo brasileiro e o armazena em um bucket S3. Se o feed RSS não estiver disponível, o sistema utiliza a versão armazenada no bucket.
 
 ## Funcionalidades
 
-- Extração de conteúdo RSS do portal Gov.br
-- Armazenamento dos dados em formato JSON no Amazon S3
-- API RESTful para consulta dos dados salvos
-- Interface web para visualização das notícias
+- Exibição de notícias do feed RSS do portal gov.br
+- Armazenamento do feed em bucket S3 como backup
+- Interface simples e responsiva
+- Fallback automático para cache quando feed online não está disponível
 
-## Tecnologias Utilizadas
+## Requisitos
 
-- Node.js
-- Express.js
-- Docker
-- AWS (EC2, S3)
-- HTML, CSS e JavaScript
+- Node.js 14.x ou superior
+- Conta AWS (opcional, caso não use endpoint público)
+- Bucket S3
+
+## Configuração
+
+1. Clone o repositório
+2. Instale as dependências:
+```
+npm install
+```
+
+3. Configure o arquivo `.env` com suas credenciais AWS ou endpoint S3 público:
+```
+# Credenciais da AWS (opcional se usar S3_ENDPOINT público)
+AWS_REGION=us-east-1
+S3_BUCKET_NAME=seu-bucket-s3
+AWS_ACCESS_KEY_ID="sua-access-key"
+AWS_SECRET_ACCESS_KEY="sua-secret-key"
+AWS_SESSION_TOKEN="seu-token-opcional"
+
+# Endpoint S3 público (use isso em vez das credenciais AWS para acesso público)
+S3_ENDPOINT=s3://seu-bucket/caminho/
+
+# Configuração do servidor
+PORT=3000
+
+# URLs das fontes RSS
+RSS_URL_GOVBR=https://www.gov.br/feed
+```
+
+## Execução
+
+Para iniciar o servidor em modo desenvolvimento:
+```
+npm run dev
+```
+
+Para iniciar o servidor em produção:
+```
+npm start
+```
+
+Acesse http://localhost:3000 para visualizar a aplicação.
 
 ## Estrutura do Projeto
 
 ```
-├── src/
-│   ├── controllers/    # Controladores da aplicação
-│   ├── services/       # Serviços de negócio
-│   ├── routes/         # Rotas da API
-│   └── config/         # Configurações da aplicação
-├── public/
-│   ├── css/            # Arquivos de estilo
-│   ├── js/             # Scripts do cliente
+├── public              # Arquivos estáticos (frontend)
+│   ├── css             # Estilos CSS
+│   ├── js              # JavaScript do frontend
 │   └── index.html      # Página principal
-├── Dockerfile          # Configuração do Docker
-├── docker-compose.yml  # Orquestração de containers
-└── package.json        # Dependências do projeto
+├── src
+│   ├── services        # Serviços da aplicação
+│   │   ├── rssService.js   # Processamento de feeds RSS
+│   │   └── s3Service.js    # Interação com AWS S3
+│   ├── routes          # Rotas da API
+│   │   └── index.js    # Definição das rotas
+│   └── index.js        # Ponto de entrada da aplicação
+├── .env                # Variáveis de ambiente
+├── package.json        # Dependências e scripts
+└── README.md           # Documentação
 ```
 
-## Como executar
+## API
 
-### Pré-requisitos
-
-- Node.js (v14 ou superior)
-- Docker e Docker Compose
-- Conta na AWS com acesso ao S3
-
-### Configuração
-
-1. Clone o repositório
-2. Configure as credenciais da AWS
-3. Execute os seguintes comandos:
-
-```bash
-# Instalar dependências
-npm install
-
-# Executar localmente
-npm start
-
-# Executar com Docker
-docker-compose up -d
-```
-
-## Endpoints da API
-
-- `GET /api/feeds` - Lista todos os feeds salvos
-- `GET /api/feeds/:id` - Retorna um feed específico
-- `POST /api/refresh` - Atualiza os feeds do RSS
-
-## Acesso à aplicação
-
-- API: http://[endereço-ec2]:3000/api
-- Interface web: http://[endereço-ec2]:3000
-
-## Equipe de Desenvolvimento
-
-- [Nome dos integrantes da equipe]
-
-## Licença
-
-Este projeto está sob a licença MIT.
+- `GET /api/feed` - Obtém o feed RSS atualizado
+- `GET /api/cache` - Obtém o feed RSS armazenado no cache S3
 

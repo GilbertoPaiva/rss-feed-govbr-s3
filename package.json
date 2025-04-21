@@ -1,11 +1,11 @@
 {
-  "name": "rss-feed-api",
+  "name": "rss-s3-app",
   "version": "1.0.0",
-  "description": "API para extração de conteúdo RSS e armazenamento no S3",
-  "main": "src/server.js",
+  "description": "Aplicativo para exibir feed RSS do governo e salvar no S3",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
     "test": "jest"
   },
   "keywords": [
@@ -21,14 +21,16 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.474.0",
     "@aws-sdk/util-stream-node": "^3.374.0",
+    "aws-sdk": "^2.1310.0",
+    "axios": "^1.3.4",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "rss-parser": "^3.13.0",
+    "rss-parser": "^3.12.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "nodemon": "^3.0.2"
+    "nodemon": "^2.0.20"
   }
 }

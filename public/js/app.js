@@ -1,90 +1,145 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const feedsContainer = document.getElementById('feeds');
-    const refreshBtn = document.getElementById('refresh-btn');
-    const statusMessage = document.getElementById('status-message');
+document.addEventListener('DOMContentLoaded', initApp);
+
+function initApp() {
+    const elements = {
+        feedsContainer: document.getElementById('feeds'),
+        loadingElement: document.getElementById('loading'),
+        messageElement: document.getElementById('message'),
+        refreshButton: document.getElementById('refresh-btn'),
+        sourceSelect: document.getElementById('source')
+    };
     
+    let state = {
+        currentSource: 'govbr'
+    };
+    
+    setupEventListeners();
     loadFeeds();
-
-    refreshBtn.addEventListener('click', refreshFeeds);
-
-    function loadFeeds() {
-        feedsContainer.innerHTML = '<div class="loading">Carregando feeds...</div>';
-        
-        fetch('/api/feeds')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Erro ao carregar feeds');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.length === 0) {
-                    feedsContainer.innerHTML = '<div class="loading">Nenhum feed disponível. Clique em "Atualizar Feeds".</div>';
-                    return;
-                }
-                
-                displayFeeds(data);
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                feedsContainer.innerHTML = `<div class="loading">Erro ao carregar feeds: ${error.message}</div>`;
-            });
-    }
-
-    function refreshFeeds() {
-        refreshBtn.disabled = true;
-        refreshBtn.textContent = 'Atualizando...';
-        
-        fetch('/api/refresh', {
-            method: 'POST'
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Erro ao atualizar feeds');
-            }
-            return response.json();
-        })
-        .then(data => {
-            showStatusMessage(`Feeds atualizados com sucesso! ${data.count} itens carregados.`, 'success');
+    
+    function setupEventListeners() {
+        elements.refreshButton.addEventListener('click', refreshFeeds);
+        elements.sourceSelect.addEventListener('change', (event) => {
+            state.currentSource = event.target.value;
             loadFeeds();
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            showStatusMessage(`Erro ao atualizar feeds: ${error.message}`, 'error');
-        })
-        .finally(() => {
-            refreshBtn.disabled = false;
-            refreshBtn.textContent = 'Atualizar Feeds';
         });
     }
-
-    function displayFeeds(feeds) {
-        feedsContainer.innerHTML = '';
+    
+    function showLoading() {
+        elements.loadingElement.style.display = 'block';
+        elements.messageElement.style.display = 'none';
+        elements.feedsContainer.innerHTML = '';
+    }
+    
+    function hideLoading() {
+        elements.loadingElement.style.display = 'none';
+    }
+    
+    function showMessage(message, isError = false) {
+        elements.messageElement.textContent = message;
+        elements.messageElement.style.display = 'block';
+        if (isError) {
+            elements.messageElement.classList.add('error');
+        } else {
+            elements.messageElement.classList.remove('error');
+        }
+    }
+    
+    function formatDate(dateString) {
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return new Date(dateString).toLocaleDateString('pt-BR', options);
+    }
+    
+    function createFeedCard(feed) {
+        const card = document.createElement('div');
+        card.className = 'feed-card';
+        
+        const title = document.createElement('h2');
+        const titleLink = document.createElement('a');
+        titleLink.href = feed.link;
+        titleLink.target = '_blank';
+        titleLink.textContent = feed.title;
+        title.appendChild(titleLink);
+        
+        const date = document.createElement('p');
+        date.className = 'date';
+        date.textContent = formatDate(feed.pubDate);
+        
+        const description = document.createElement('div');
+        description.className = 'description';
+        description.innerHTML = feed.description;
+        
+        card.appendChild(title);
+        card.appendChild(date);
+        card.appendChild(description);
+        
+        return card;
+    }
+    
+    function renderFeeds(feeds) {
+        elements.feedsContainer.innerHTML = '';
+        
+        if (!feeds || feeds.length === 0) {
+            showMessage('Nenhum feed encontrado.');
+            return;
+        }
         
         feeds.forEach(feed => {
-            const date = new Date(feed.isoDate);
-            const formattedDate = date.toLocaleString('pt-BR');
-            
-            const feedCard = document.createElement('div');
-            feedCard.className = 'feed-card';
-            feedCard.innerHTML = `
-                <h3 class="feed-title">${feed.title}</h3>
-                <p class="feed-date">Publicado em: ${formattedDate}</p>
-                <p class="feed-snippet">${feed.contentSnippet || 'Sem descrição disponível.'}</p>
-                <a href="${feed.link}" target="_blank" class="feed-link">Leia mais</a>
-            `;
-            
-            feedsContainer.appendChild(feedCard);
+            const card = createFeedCard(feed);
+            elements.feedsContainer.appendChild(card);
         });
     }
-
-    function showStatusMessage(message, type) {
-        statusMessage.textContent = message;
-        statusMessage.className = type;
-        statusMessage.style.display = 'block';
+    
+    async function loadFeeds() {
+        showLoading();
         
-        setTimeout(() => {
-            statusMessage.style.display = 'none';
-        }, 5000);
+        try {
+            const response = await fetch(`/api/feeds?source=${state.currentSource}`);
+            const data = await response.json();
+            
+            hideLoading();
+            
+            if (response.ok) {
+                renderFeeds(data);
+            } else {
+                showMessage(`Erro ao carregar feeds: ${data.message}`, true);
+            }
+        } catch (error) {
+            hideLoading();
+            showMessage(`Erro na comunicação com o servidor: ${error.message}`, true);
+        }
     }
-});
+    
+    async function refreshFeeds() {
+        showLoading();
+        showMessage('Atualizando feeds...');
+        
+        try {
+            const response = await fetch('/api/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ source: state.currentSource })
+            });
+            
+            const data = await response.json();
+            hideLoading();
+            
+            if (response.ok) {
+                showMessage('Feeds atualizados com sucesso!');
+                renderFeeds(data);
+            } else {
+                showMessage(`Erro ao atualizar feeds: ${data.message}`, true);
+            }
+        } catch (error) {
+            hideLoading();
+            showMessage(`Erro na comunicação com o servidor: ${error.message}`, true);
+        }
+    }
+}
