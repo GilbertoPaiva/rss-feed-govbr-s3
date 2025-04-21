@@ -39,8 +39,47 @@ const refreshFeeds = async (req, res) => {
   }
 };
 
+async function fetchAndSaveFeed(req, res) {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+
+    const feed = await feedService.fetchFeed(url);
+    const result = await feedService.saveFeedToS3(feed);
+    
+    res.status(201).json({
+      message: 'Feed fetched and saved successfully',
+      feedId: result.feedId
+    });
+  } catch (error) {
+    console.error('Error in fetchAndSaveFeed:', error);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+async function getFeed(req, res) {
+  try {
+    const { feedId } = req.params;
+    
+    if (!feedId) {
+      return res.status(400).json({ error: 'Feed ID is required' });
+    }
+
+    const feedData = await feedService.getFeedFromS3(feedId);
+    res.status(200).json(feedData);
+  } catch (error) {
+    console.error('Error in getFeed:', error);
+    res.status(500).json({ error: error.message });
+  }
+}
+
 module.exports = {
   getAllFeeds,
   getFeedById,
-  refreshFeeds
+  refreshFeeds,
+  fetchAndSaveFeed,
+  getFeed
 };
