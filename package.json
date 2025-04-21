@@ -1,15 +1,22 @@
 {
-  "name": "sprint-2-3-pb",
+  "name": "rss-feed-api",
   "version": "1.0.0",
-  "type": "module",
-  "description": "Avaliação das segunda e terceira sprints do programa de bolsas Compass UOL para formação em Inteligência Artificial para AWS.",
-  "main": "index.js",
+  "description": "API para extração de conteúdo RSS e armazenamento no S3",
+  "main": "src/server.js",
   "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "rss",
+    "aws",
+    "s3",
+    "docker",
+    "nodejs"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.787.0",
     "aws-sdk": "^2.1692.0",

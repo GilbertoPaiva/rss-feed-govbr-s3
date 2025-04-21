@@ -1,79 +1,49 @@
 const AWS = require('aws-sdk');
-const dotenv = require('dotenv');
 
-dotenv.config();
+const s3 = new AWS.S3({
+  region: process.env.AWS_REGION
+});
 
-const usePublicEndpoint = process.env.S3_ENDPOINT ? true : false;
+const bucketName = process.env.S3_BUCKET_NAME;
 
-let s3;
-
-if (usePublicEndpoint) {
-  const endpoint = new AWS.Endpoint(process.env.S3_ENDPOINT);
-  s3 = new AWS.S3({
-    endpoint: endpoint,
-    s3ForcePathStyle: true,
-    signatureVersion: 'v4',
-    region: process.env.AWS_REGION || 'us-east-1'
-  });
-} else {
-  s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION || 'us-east-1'
-  });
-}
-
-const bucketName = process.env.AWS_S3_BUCKET;
-
-async function saveToS3(key, data) {
-  const params = {
-    Bucket: bucketName,
-    Key: key,
-    Body: JSON.stringify(data),
-    ContentType: 'application/json'
-  };
-
+const saveToS3 = async (fileName, data) => {
   try {
-    const result = await s3.putObject(params).promise();
-    console.log(`Arquivo ${key} salvo com sucesso no S3`);
-    return result;
+    const params = {
+      Bucket: bucketName,
+      Key: fileName,
+      Body: data,
+      ContentType: 'application/json'
+    };
+
+    const result = await s3.upload(params).promise();
+    console.log(`Arquivo salvo com sucesso: ${result.Location}`);
+    return result.Location;
   } catch (error) {
-    console.error(`Erro ao salvar no S3: ${error}`);
+    console.error('Erro ao salvar no S3:', error);
     throw error;
   }
-}
+};
 
-async function getFileFromS3(key) {
-  const params = {
-    Bucket: bucketName,
-    Key: key
-  };
-
+const getFileFromS3 = async (fileName) => {
   try {
+    const params = {
+      Bucket: bucketName,
+      Key: fileName
+    };
+
     const data = await s3.getObject(params).promise();
-    return JSON.parse(data.Body.toString());
+    return data.Body.toString();
   } catch (error) {
-    console.error(`Erro ao recuperar arquivo ${key} do S3: ${error}`);
+    if (error.code === 'NoSuchKey') {
+      console.log(`Arquivo ${fileName} não encontrado no bucket. Retornando array vazio.`);
+      return null;
+    }
+    console.error('Erro ao obter arquivo do S3:', error);
     throw error;
   }
-}
-
-async function listFilesFromS3() {
-  const params = {
-    Bucket: bucketName
-  };
-
-  try {
-    const data = await s3.listObjectsV2(params).promise();
-    return data.Contents.map(item => item.Key);
-  } catch (error) {
-    console.error(`Erro ao listar arquivos do S3: ${error}`);
-    throw error;
-  }
-}
+};
 
 module.exports = {
   saveToS3,
-  getFileFromS3,
-  listFilesFromS3
+  getFileFromS3
 };
