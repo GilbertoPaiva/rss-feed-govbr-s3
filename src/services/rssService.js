@@ -62,9 +62,37 @@ async function fetchRSSFeed() {
     } catch (cacheError) {
       console.error('Erro ao buscar feed do cache:', cacheError.message);
       
+      if (cacheError.code === 'NoSuchKey') {
+        console.log('Arquivo de cache não encontrado. Criando um feed vazio inicial.');
+        const emptyFeed = {
+          title: 'Portal Gov.br',
+          description: 'Portal de Notícias do Governo Digital',
+          link: RSS_URL,
+          lastUpdated: new Date().toISOString(),
+          items: [],
+          isEmptyInitialFeed: true
+        };
+        
+        try {
+          await s3Service.saveToS3(CACHE_FILE_KEY, emptyFeed);
+          console.log('Feed vazio inicial salvo com sucesso no S3');
+          return emptyFeed;
+        } catch (saveError) {
+          console.error('Erro ao salvar feed vazio inicial:', saveError.message);
+        }
+      }
+      
       await s3Service.testS3Connection();
       
-      throw new Error('Não foi possível obter o feed RSS nem do cache');
+      return {
+        title: 'Portal Gov.br',
+        description: 'Feed temporariamente indisponível',
+        link: RSS_URL,
+        lastUpdated: new Date().toISOString(),
+        items: [],
+        error: true,
+        errorMessage: 'Não foi possível obter o feed RSS nem do cache'
+      };
     }
   }
 }
