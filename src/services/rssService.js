@@ -11,12 +11,19 @@ const CACHE_FILE_KEY = process.env.CACHE_FILE_KEY || 'rss-gov/rss-data.json';
 
 async function fetchRSSFeed() {
   try {
-    const response = await axios.get(RSS_URL);
+    console.log(`Tentando buscar feed RSS de: ${RSS_URL}`);
+    const response = await axios.get(RSS_URL, { 
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'RSS Reader/1.0'
+      }
+    });
+    
     const feed = await parser.parseString(response.data);
     
     const processedFeed = {
       title: feed.title,
-      description: feed.description,
+      description: feed.description || 'Portal de Notícias do Governo Digital',
       link: feed.link,
       lastUpdated: new Date().toISOString(),
       items: feed.items.map(item => ({
@@ -30,16 +37,33 @@ async function fetchRSSFeed() {
       }))
     };
     
-    await s3Service.saveToS3(CACHE_FILE_KEY, processedFeed);
-    return processedFeed;
-  } catch (error) {
-    console.error('Erro ao buscar feed RSS:', error);
+    console.log(`Feed RSS obtido com sucesso. Total de itens: ${processedFeed.items.length}`);
     
     try {
+      await s3Service.saveToS3(CACHE_FILE_KEY, processedFeed);
+      console.log('Feed salvo com sucesso no S3');
+    } catch (s3Error) {
+      console.error('Falha ao salvar feed no S3, mas continuando com o feed online:', s3Error.message);
+    }
+    
+    return processedFeed;
+  } catch (error) {
+    console.error('Erro ao buscar feed RSS:', error.message);
+    
+    try {
+      console.log('Tentando obter feed do cache S3...');
       const cachedFeed = await s3Service.getFileFromS3(CACHE_FILE_KEY);
-      console.log('Usando feed RSS em cache do S3');
+      console.log('Feed obtido do cache S3 com sucesso');
+      
+      cachedFeed.fromCache = true;
+      cachedFeed.retrievedFromCache = new Date().toISOString();
+      
       return cachedFeed;
     } catch (cacheError) {
+      console.error('Erro ao buscar feed do cache:', cacheError.message);
+      
+      await s3Service.testS3Connection();
+      
       throw new Error('Não foi possível obter o feed RSS nem do cache');
     }
   }
