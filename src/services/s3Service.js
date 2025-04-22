@@ -8,13 +8,24 @@ const CACHE_FILE_KEY = process.env.CACHE_FILE_KEY || 'rss-gov/rss-data.json';
 
 const s3Config = {
   region: process.env.AWS_REGION || 'us-east-1',
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  sessionToken: process.env.AWS_SESSION_TOKEN
+  signatureVersion: 'v4'
 };
 
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+  s3Config.accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  s3Config.secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  
+  if (process.env.AWS_SESSION_TOKEN) {
+    s3Config.sessionToken = process.env.AWS_SESSION_TOKEN;
+  }
+}
+
 if (process.env.S3_ENDPOINT) {
-  s3Config.endpoint = process.env.S3_ENDPOINT;
+  if (process.env.S3_ENDPOINT.startsWith('https://') || process.env.S3_ENDPOINT.startsWith('http://')) {
+    s3Config.endpoint = process.env.S3_ENDPOINT;
+  } else {
+    s3Config.endpoint = `https://${process.env.S3_ENDPOINT}`;
+  }
   s3Config.s3ForcePathStyle = true;
 }
 
