@@ -17,6 +17,6 @@ export const s3Client = new S3Client({
 if (process.env.NODE_ENV === 'development') {
   console.log('Configuração AWS S3:', {
     region: process.env.AWS_REGION,
-    bucket: process.env.AWS_BUCKET_NAME
+    bucket: process.env.S3_BUCKET_NAME,
   });
 }
