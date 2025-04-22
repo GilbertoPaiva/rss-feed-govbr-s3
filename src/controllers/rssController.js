@@ -9,7 +9,7 @@ export const extractAndSaveRSS = async (req, res) => {
     // Tenta salvar no S3 (opcional)
     try {
       await s3Client.send(new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
+        Bucket: process.env.S3_BUCKET_NAME,
         Key: `rss-${Date.now()}.json`,
         Body: JSON.stringify(feed),
         ContentType: 'application/json'
