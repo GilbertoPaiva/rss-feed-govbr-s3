@@ -80,3 +80,10 @@ Acesse http://localhost:3000 para visualizar a aplicação.
 - `GET /api/feed` - Obtém o feed RSS atualizado
 - `GET /api/cache` - Obtém o feed RSS armazenado no cache S3
 
+## Autores
+
+Este projeto foi desenvolvido por:
+- Bárbara Castro
+- Raquel Corrêa
+- Gilberto Paiva
+
